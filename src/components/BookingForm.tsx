@@ -90,20 +90,18 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
     address: string
     latitude?: number
     longitude?: number
-  }) => {
-    try {
-      const edgeFunctionUrl = 'http://localhost:54321/functions/v1/send-slack-notification'
+    }) => {
+      try {
+        const { error } = await supabase.functions.invoke('send-slack-notification', {
+          body: bookingData,
+        })
 
-      await fetch(edgeFunctionUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bookingData),
-      })
-    } catch (err) {
-      console.error('Slack notification failed:', err)
-    }
+        if (error) {
+          throw error
+        }
+      } catch (err) {
+        console.error('Slack notification failed:', err)
+      }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

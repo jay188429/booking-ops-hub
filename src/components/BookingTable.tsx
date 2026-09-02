@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import MapModal from './MapModal'
 
 interface Booking {
   id: string
@@ -8,6 +9,8 @@ interface Booking {
   date: string
   time: string
   address: string
+  latitude?: number
+  longitude?: number
   status: 'pending' | 'confirmed'
 }
 
@@ -19,6 +22,8 @@ export default function BookingTable({ refreshKey }: BookingTableProps) {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState<string | null>(null)
+  const [selectedAddress, setSelectedAddress] = useState<string | null>(null)
+  const [isMapOpen, setIsMapOpen] = useState(false)
 
   useEffect(() => {
     fetchBookings()
@@ -71,19 +76,22 @@ export default function BookingTable({ refreshKey }: BookingTableProps) {
     return status === 'pending' ? '대기중' : '확정'
   }
 
-  const getMapsLink = (address: string) => {
+  const handleAddressClick = (address: string) => {
+    setSelectedAddress(address)
+    setIsMapOpen(true)
+  }
+
+  const getAddressElement = (address: string) => {
     if (!address || address.trim() === '') {
       return '-'
     }
     return (
-      <a
-        href={`https://maps.google.com/?q=${encodeURIComponent(address)}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-600 underline hover:text-blue-800"
+      <button
+        onClick={() => handleAddressClick(address)}
+        className="text-blue-600 underline hover:text-blue-800 transition-colors"
       >
         {address}
-      </a>
+      </button>
     )
   }
 
@@ -96,8 +104,9 @@ export default function BookingTable({ refreshKey }: BookingTableProps) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full border-collapse border border-gray-300">
+    <>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse border border-gray-300">
         <thead className="bg-gray-100">
           <tr>
             <th className="border border-gray-300 px-4 py-2 text-left">고객사</th>
@@ -105,6 +114,7 @@ export default function BookingTable({ refreshKey }: BookingTableProps) {
             <th className="border border-gray-300 px-4 py-2 text-left">날짜</th>
             <th className="border border-gray-300 px-4 py-2 text-left">시간</th>
             <th className="border border-gray-300 px-4 py-2 text-left">주소</th>
+            <th className="border border-gray-300 px-4 py-2 text-left">위도/경도</th>
             <th className="border border-gray-300 px-4 py-2 text-center">상태</th>
           </tr>
         </thead>
@@ -116,7 +126,16 @@ export default function BookingTable({ refreshKey }: BookingTableProps) {
               <td className="border border-gray-300 px-4 py-2">{booking.date}</td>
               <td className="border border-gray-300 px-4 py-2">{booking.time}</td>
               <td className="border border-gray-300 px-4 py-2">
-                {getMapsLink(booking.address)}
+                {getAddressElement(booking.address)}
+              </td>
+              <td className="border border-gray-300 px-4 py-2 text-sm">
+                {booking.latitude && booking.longitude ? (
+                  <span className="text-gray-600">
+                    {booking.latitude.toFixed(4)}, {booking.longitude.toFixed(4)}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                )}
               </td>
               <td className="border border-gray-300 px-4 py-2 text-center">
                 <button
@@ -133,6 +152,17 @@ export default function BookingTable({ refreshKey }: BookingTableProps) {
           ))}
         </tbody>
       </table>
-    </div>
+      </div>
+      {selectedAddress && (
+        <MapModal
+          address={selectedAddress}
+          isOpen={isMapOpen}
+          onClose={() => {
+            setIsMapOpen(false)
+            setSelectedAddress(null)
+          }}
+        />
+      )}
+    </>
   )
 }

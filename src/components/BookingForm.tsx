@@ -91,71 +91,15 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
     latitude?: number
     longitude?: number
   }) => {
-    const webhookUrl = import.meta.env.VITE_SLACK_WEBHOOK_URL
-    if (!webhookUrl) return
-
     try {
-      const message = {
-        text: '새 예약이 추가되었습니다',
-        blocks: [
-          {
-            type: 'header',
-            text: {
-              type: 'plain_text',
-              text: '📅 새 예약 알림',
-            },
-          },
-          {
-            type: 'section',
-            fields: [
-              {
-                type: 'mrkdwn',
-                text: `*고객사*\n${bookingData.customer}`,
-              },
-              {
-                type: 'mrkdwn',
-                text: `*서비스*\n${bookingData.service}`,
-              },
-              {
-                type: 'mrkdwn',
-                text: `*날짜*\n${bookingData.date}`,
-              },
-              {
-                type: 'mrkdwn',
-                text: `*시간*\n${bookingData.time}`,
-              },
-            ],
-          },
-          {
-            type: 'section',
-            text: {
-              type: 'mrkdwn',
-              text: `*주소*\n${bookingData.address || '미입력'}`,
-            },
-          },
-          ...(bookingData.latitude && bookingData.longitude
-            ? [
-                {
-                  type: 'section',
-                  text: {
-                    type: 'mrkdwn',
-                    text: `*위치*\n위도: ${bookingData.latitude.toFixed(4)}, 경도: ${bookingData.longitude.toFixed(4)}`,
-                  },
-                },
-              ]
-            : []),
-          {
-            type: 'divider',
-          },
-        ],
-      }
+      const edgeFunctionUrl = 'http://localhost:54321/functions/v1/send-slack-notification'
 
-      await fetch(webhookUrl, {
+      await fetch(edgeFunctionUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(message),
+        body: JSON.stringify(bookingData),
       })
     } catch (err) {
       console.error('Slack notification failed:', err)

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import MapModal from './MapModal'
+import WeatherInfo from './WeatherInfo'
 
 interface Booking {
   id: string
@@ -115,6 +116,7 @@ export default function BookingTable({ refreshKey }: BookingTableProps) {
             <th className="border border-gray-300 px-4 py-2 text-left">시간</th>
             <th className="border border-gray-300 px-4 py-2 text-left">주소</th>
             <th className="border border-gray-300 px-4 py-2 text-left">위도/경도</th>
+            <th className="border border-gray-300 px-4 py-2 text-left">날씨</th>
             <th className="border border-gray-300 px-4 py-2 text-center">상태</th>
           </tr>
         </thead>
@@ -133,6 +135,13 @@ export default function BookingTable({ refreshKey }: BookingTableProps) {
                   <span className="text-gray-600">
                     {booking.latitude.toFixed(4)}, {booking.longitude.toFixed(4)}
                   </span>
+                ) : (
+                  <span className="text-gray-400">-</span>
+                )}
+              </td>
+              <td className="border border-gray-300 px-4 py-2 text-sm">
+                {booking.latitude && booking.longitude ? (
+                  <WeatherInfo latitude={booking.latitude} longitude={booking.longitude} />
                 ) : (
                   <span className="text-gray-400">-</span>
                 )}

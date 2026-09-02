@@ -16,17 +16,16 @@ create table bookings (
 -- 잠금을 켠다. 켜기만 하면 아무도 못 쓴다 - 그래서 필요한 문만 아래에서 연다.
 alter table bookings enable row level security;
 
--- 오늘 만드는 앱은 로그인이 없다. 실습용으로 읽기·쓰기·수정 세 문을 연다.
--- 실제 서비스에서는 이렇게 열어두지 않는다. 로그인을 붙이는 회차에서 내 것만 보이게 좁힌다.
+-- 로그인한 사용자만 읽기·쓰기·수정할 수 있게 연다.
 create policy "demo read" on bookings
-  for select to anon
+  for select to authenticated
   using (true);
 
 create policy "demo insert" on bookings
-  for insert to anon
+  for insert to authenticated
   with check (true);
 
 create policy "demo update" on bookings
-  for update to anon
+  for update to authenticated
   using (true)
   with check (true);

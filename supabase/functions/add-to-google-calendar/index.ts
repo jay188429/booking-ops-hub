@@ -52,6 +52,27 @@ async function getAccessToken(): Promise<string> {
   return data.access_token
 }
 
+async function requireAuthenticatedUser(req: Request): Promise<void> {
+  const authorization = req.headers.get("Authorization")
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")
+
+  if (!authorization?.startsWith("Bearer ") || !supabaseUrl || !supabaseAnonKey) {
+    throw new Error("Unauthorized")
+  }
+
+  const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+    headers: {
+      apikey: supabaseAnonKey,
+      Authorization: authorization,
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error("Unauthorized")
+  }
+}
+
 async function addEventToCalendar(
   bookingData: BookingData,
   accessToken: string
@@ -118,6 +139,8 @@ serve(async (req) => {
   }
 
   try {
+    await requireAuthenticatedUser(req)
+
     const bookingData: BookingData = await req.json()
 
     // Validate required fields
@@ -153,7 +176,7 @@ serve(async (req) => {
     console.error("Error in add-to-google-calendar:", errorMessage)
 
     return new Response(JSON.stringify({ error: errorMessage }), {
-      status: 500,
+      status: errorMessage === "Unauthorized" ? 401 : 500,
       headers: corsHeaders,
     })
   }

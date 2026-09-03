@@ -104,6 +104,26 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
       }
   }
 
+  const addToGoogleCalendar = async (bookingData: {
+    customer: string
+    service: string
+    date: string
+    time: string
+    address: string
+    }) => {
+      try {
+        const { error } = await supabase.functions.invoke('add-to-google-calendar', {
+          body: bookingData,
+        })
+
+        if (error) {
+          throw error
+        }
+      } catch (err) {
+        console.error('Google Calendar integration failed:', err)
+      }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
@@ -164,6 +184,15 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
         address: formData.address,
         latitude,
         longitude,
+      })
+
+      // Add to Google Calendar
+      await addToGoogleCalendar({
+        customer: formData.customer,
+        service: formData.service,
+        date: formData.date,
+        time: formData.time,
+        address: formData.address,
       })
 
       // Reset form

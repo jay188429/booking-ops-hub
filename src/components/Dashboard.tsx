@@ -140,41 +140,84 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* 토글과 버튼 */}
-      <div className="bg-white rounded-lg shadow-md p-6 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={autoJudge}
-              onChange={handleAutoJudgeToggle}
-              className="w-4 h-4"
-            />
-            <span className="text-sm font-medium text-gray-700">자동 판정</span>
-          </label>
-          <span className="text-xs text-gray-500">
-            {autoJudge ? '(자동으로 확정)' : '(수동 확인 필요)'}
-          </span>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      {/* 헤더 */}
+      <div className="border-b border-slate-700 backdrop-blur-sm bg-slate-800/50">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-orange-400 via-red-400 to-pink-400 bg-clip-text text-transparent mb-2">
+                판정 대시보드
+              </h1>
+              <p className="text-slate-400 text-sm">예약 판정 흐름 모니터링</p>
+            </div>
 
-        <button
-          onClick={handleJudgeAll}
-          disabled={judging}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 transition-colors font-medium"
-        >
-          {judging ? '판정 중...' : '전부 판정'}
-        </button>
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-3 px-4 py-2 rounded-lg bg-slate-700/50 border border-slate-600 cursor-pointer hover:bg-slate-700 transition-colors">
+                <div className="relative">
+                  <input
+                    type="checkbox"
+                    checked={autoJudge}
+                    onChange={handleAutoJudgeToggle}
+                    className="sr-only"
+                  />
+                  <div className={`w-5 h-5 rounded border-2 transition-all ${
+                    autoJudge ? 'bg-orange-500 border-orange-500' : 'border-slate-500'
+                  }`}></div>
+                </div>
+                <span className="text-sm font-medium text-slate-200">자동 판정</span>
+                <span className="text-xs text-slate-400">
+                  {autoJudge ? '자동 확정' : '수동 확인'}
+                </span>
+              </label>
+
+              <button
+                onClick={handleJudgeAll}
+                disabled={judging}
+                className="px-6 py-2 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-lg hover:from-orange-600 hover:to-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-lg"
+              >
+                {judging ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full border-2 border-white border-r-transparent animate-spin"></div>
+                    판정 중...
+                  </span>
+                ) : (
+                  '전부 판정'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* 워크플로 그래프 */}
-      <WorkflowGraph refreshKey={refreshKey} lastDecision={lastDecision} />
+      {/* 메인 콘텐츠 */}
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        {/* 워크플로 그래프 */}
+        <div className="backdrop-blur-sm bg-slate-800/50 rounded-xl border border-slate-700 p-6 shadow-xl">
+          <WorkflowGraph refreshKey={refreshKey} lastDecision={lastDecision} />
+        </div>
 
-      {/* 판정 로그 */}
-      <JudgmentLog realtimeEvent={realtimeEvent} />
+        {/* 판정 로그와 상태 보드 */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* 판정 로그 */}
+          <div className="lg:col-span-1 backdrop-blur-sm bg-slate-800/50 rounded-xl border border-slate-700 p-6 shadow-xl max-h-96 overflow-hidden">
+            <h3 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+              판정 로그
+            </h3>
+            <JudgmentLog realtimeEvent={realtimeEvent} />
+          </div>
 
-      {/* 상태 보드 */}
-      <StatusBoard refreshKey={refreshKey} />
+          {/* 상태 보드 */}
+          <div className="lg:col-span-2 backdrop-blur-sm bg-slate-800/50 rounded-xl border border-slate-700 p-6 shadow-xl">
+            <h3 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+              상태 현황
+            </h3>
+            <StatusBoard refreshKey={refreshKey} />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

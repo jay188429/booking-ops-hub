@@ -117,11 +117,10 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
     setLoading(true)
 
     try {
-      const slotsWantedStr = formData.slotsWanted
-        .sort((a, b) => (slotOrder[a] || 0) - (slotOrder[b] || 0))
-        .map(id => SLOT_OPTIONS.find(s => s.id === id)?.label || '')
-        .filter(Boolean)
-        .join(',')
+      const orderedSlots = [...formData.slotsWanted].sort(
+        (a, b) => (slotOrder[a] || 0) - (slotOrder[b] || 0),
+      )
+      const slotsWantedStr = orderedSlots.join(',')
       const calendarTime = SLOT_START_TIMES[formData.slotsWanted[0]] || '10:00'
       const calendarService = formData.memo || `${formData.kind} ${formData.form} 예약`
 
@@ -131,11 +130,14 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
           {
             customer: formData.customer,
             service: formData.memo || `${formData.kind} ${formData.form} 예약`,
+            kind: formData.kind,
             address: formData.address || '',
             date: formData.date,
+            slots_wanted: slotsWantedStr,
             status: 'pending',
+            decision: 'pending',
             decision_status: 'waiting',
-            time: slotsWantedStr || '미정',
+            time: orderedSlots.map((slot) => SLOT_OPTIONS.find((item) => item.id === slot)?.label || slot).join(',') || '미정',
             via: 'form',
           },
         ])

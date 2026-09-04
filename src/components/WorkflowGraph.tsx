@@ -91,21 +91,21 @@ export default function WorkflowGraph({ refreshKey, lastDecision }: WorkflowGrap
   const getNodeColor = (node: string): string => {
     switch (node) {
       case '대기':
-        return '#e5e7eb'
+        return '#475569'
       case '확정-자동':
-        return '#bbf7d0'
+        return '#22c55e'
       case '확정-수동':
-        return '#86efac'
+        return '#84cc16'
       case '검토':
-        return '#fef08a'
+        return '#eab308'
       case '기각':
-        return '#fecaca'
+        return '#ef4444'
       case '질문':
-        return '#bfdbfe'
+        return '#3b82f6'
       case '판정':
-        return '#ffffff'
+        return '#1e293b'
       default:
-        return '#f3f4f6'
+        return '#334155'
     }
   }
 
@@ -138,17 +138,23 @@ export default function WorkflowGraph({ refreshKey, lastDecision }: WorkflowGrap
   ]
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">판정 워크플로</h3>
-      <svg width="100%" height="550" viewBox="0 0 700 550" className="border border-gray-200 rounded">
+    <div className="w-full">
+      <svg width="100%" height="550" viewBox="0 0 700 550" className="drop-shadow-lg">
         {/* 화살표 정의 */}
         <defs>
           <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-            <polygon points="0 0, 10 3, 0 6" fill="#666" />
+            <polygon points="0 0, 10 3, 0 6" fill="#94a3b8" />
           </marker>
           <marker id="arrowhead-highlight" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-            <polygon points="0 0, 10 3, 0 6" fill="#ff6b6b" />
+            <polygon points="0 0, 10 3, 0 6" fill="#fbbf24" />
           </marker>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
         </defs>
 
         {/* 화살표 그리기 */}
@@ -164,10 +170,11 @@ export default function WorkflowGraph({ refreshKey, lastDecision }: WorkflowGrap
               y1={y1}
               x2={x2 - 40}
               y2={y2}
-              stroke={isHighlighted ? '#ff6b6b' : '#d1d5db'}
-              strokeWidth={isHighlighted ? 3 : 2}
+              stroke={isHighlighted ? '#fbbf24' : '#475569'}
+              strokeWidth={isHighlighted ? 4 : 2}
               markerEnd={isHighlighted ? 'url(#arrowhead-highlight)' : 'url(#arrowhead)'}
-              strokeDasharray={isHighlighted ? '0' : '0'}
+              filter={isHighlighted ? 'url(#glow)' : ''}
+              opacity={isHighlighted ? 1 : 0.6}
             />
           )
         })}
@@ -176,17 +183,39 @@ export default function WorkflowGraph({ refreshKey, lastDecision }: WorkflowGrap
         {Object.entries(nodePositions).map(([node, [x, y]]) => {
           const count = counts[node as keyof NodeCounts] || 0
           const color = getNodeColor(node)
-          const textColor = node === '판정' ? '#000' : '#000'
-          const strokeColor = node === '판정' ? '#000' : 'none'
+          const strokeColor = node === '판정' ? '#64748b' : 'none'
 
           return (
             <g key={`node-${node}`}>
-              <circle cx={x + 20} cy={y} r={35} fill={color} stroke={strokeColor} strokeWidth={node === '판정' ? 2 : 0} />
-              <text x={x + 20} y={y - 5} textAnchor="middle" fontSize="11" fontWeight="bold" fill={textColor}>
+              <circle
+                cx={x + 20}
+                cy={y}
+                r={35}
+                fill={color}
+                stroke={strokeColor}
+                strokeWidth={node === '판정' ? 3 : 0}
+                opacity={0.9}
+              />
+              <text
+                x={x + 20}
+                y={y + 3}
+                textAnchor="middle"
+                fontSize="11"
+                fontWeight="bold"
+                fill="#f1f5f9"
+                letterSpacing="0.5"
+              >
                 {node}
               </text>
-              <circle cx={x + 20} cy={y} r={12} fill="#666" />
-              <text x={x + 20} y={y + 4} textAnchor="middle" fontSize="12" fontWeight="bold" fill="white">
+              <circle cx={x + 20} cy={y + 22} r={11} fill="#fb923c" opacity={0.9} />
+              <text
+                x={x + 20}
+                y={y + 26}
+                textAnchor="middle"
+                fontSize="12"
+                fontWeight="bold"
+                fill="#1e293b"
+              >
                 {count}
               </text>
             </g>

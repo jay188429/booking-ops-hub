@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { decide } from '../lib/decide'
+import { notifyConfirmedCalendar } from '../lib/calendar'
 import WorkflowGraph from './WorkflowGraph'
 import JudgmentLog from './JudgmentLog'
 import StatusBoard from './StatusBoard'
@@ -105,11 +106,27 @@ export default function Dashboard() {
             reason: result.reason,
             options: result.options,
             slot_assigned: result.slotAssigned,
+            candidate: result.candidate,
             trace: result.trace.join('\n'),
           })
           .eq('id', booking.id)
 
         if (updateError) throw updateError
+        if (result.decision === 'confirmed_auto') {
+          try {
+            await notifyConfirmedCalendar({
+              customer: booking.customer,
+              service: booking.service,
+              date: booking.date,
+              time: booking.time,
+              slot_assigned: result.slotAssigned,
+              address: booking.address,
+              decision: result.decision,
+            })
+          } catch (calendarError) {
+            console.error('Confirmed calendar notification failed:', calendarError)
+          }
+        }
         const index = workingBookings.findIndex((item: any) => item.id === booking.id)
         if (index >= 0) {
           workingBookings[index] = {
@@ -197,23 +214,24 @@ export default function Dashboard() {
           <WorkflowGraph refreshKey={refreshKey} lastDecision={lastDecision} />
         </div>
 
-        {/* 판정 로그와 상태 보드 */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* 판정 로그 */}
-          <div className="lg:col-span-1 backdrop-blur-sm bg-slate-800/50 rounded-xl border border-slate-700 p-6 shadow-xl max-h-96 overflow-hidden">
-            <h3 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-              판정 로그
-            </h3>
+        {/* 판정 로그 */}
+        <div className="backdrop-blur-sm bg-slate-800/50 rounded-xl border border-slate-700 p-6 shadow-xl">
+          <h3 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+            판정 로그
+          </h3>
+          <div className="max-h-64 overflow-y-auto">
             <JudgmentLog realtimeEvent={realtimeEvent} />
           </div>
+        </div>
 
-          {/* 상태 보드 */}
-          <div className="lg:col-span-2 backdrop-blur-sm bg-slate-800/50 rounded-xl border border-slate-700 p-6 shadow-xl">
-            <h3 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-              상태 현황
-            </h3>
+{/* 상태 보드 */}
+        <div className="backdrop-blur-sm bg-slate-800/50 rounded-xl border border-slate-700 p-6 shadow-xl">
+          <h3 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-orange-500"></span>
+            상태 현황
+          </h3>
+          <div className="overflow-x-auto">
             <StatusBoard refreshKey={refreshKey} />
           </div>
         </div>

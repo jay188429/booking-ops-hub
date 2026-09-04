@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import BookingForm from './components/BookingForm'
 import BookingTable from './components/BookingTable'
-import StatCards from './components/StatCards'
-import StatusBoard from './components/StatusBoard'
+import Dashboard from './components/Dashboard'
 import LoginPage from './components/LoginPage'
 import UndecidedManagement from './components/UndecidedManagement'
 import { onAuthStateChange, signOut } from './lib/supabase'
@@ -75,8 +74,7 @@ export default function App() {
       case '대시보드':
         return (
           <div className="pb-20">
-            <StatCards refreshKey={refreshKey} />
-            <StatusBoard refreshKey={refreshKey} />
+            <Dashboard />
           </div>
         )
       case '예약목록':

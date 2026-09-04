@@ -1,131 +1,146 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-type BoardStatus = 'waiting' | 'auto' | 'human' | 'blocked' | 'question'
-
 interface Booking {
-  id: number
+  id: string
   customer: string
-  service: string
   date: string
-  time: string
-  address: string | null
-  status: 'pending' | 'confirmed'
-  decision_status: BoardStatus
+  kind: string
+  form: string
+  memo: string
+  slot_assigned?: string
+  decision: string
+  reason?: string
+  options?: string
 }
 
-const columns: Array<{
-  key: BoardStatus
-  label: string
-  className: string
-}> = [
-  { key: 'waiting', label: '대기', className: 'border-slate-200 bg-slate-50' },
-  { key: 'auto', label: '자동', className: 'border-green-200 bg-green-50' },
-  { key: 'human', label: '사람', className: 'border-yellow-200 bg-yellow-50' },
-  { key: 'blocked', label: '막힘', className: 'border-red-200 bg-red-50' },
-  { key: 'question', label: '질문', className: 'border-blue-200 bg-blue-50' },
-]
+interface StatusBoardProps {
+  refreshKey: number
+}
 
-export default function StatusBoard({ refreshKey = 0 }: { refreshKey?: number }) {
-  const [bookings, setBookings] = useState<Booking[]>([])
+export default function StatusBoard({ refreshKey }: StatusBoardProps) {
+  const [bookings, setBookings] = useState<Record<string, Booking[]>>({
+    '대기': [],
+    '확정-자동': [],
+    '확정-수동': [],
+    '검토': [],
+    '기각': [],
+    '질문': [],
+  })
   const [loading, setLoading] = useState(true)
-  const [rerunKey, setRerunKey] = useState(0)
 
   useEffect(() => {
-    async function fetchBookings() {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('bookings')
-        .select('id, customer, service, date, time, address, status, decision_status')
-        .order('date', { ascending: true })
-        .order('time', { ascending: true })
+    fetchBookings()
+  }, [refreshKey])
 
-      if (error) {
-        console.error('Error fetching dashboard bookings:', error)
-        setBookings([])
-      } else {
-        const loaded = (data || []) as Booking[]
-        const waiting = loaded.filter((booking) => booking.decision_status === 'waiting')
-        const automaticallyClassified = await Promise.all(waiting.map(async (booking) => {
-          const nextStatus: BoardStatus = booking.address?.trim() ? 'auto' : 'question'
-          const { error: updateError } = await supabase
-            .from('bookings')
-            .update({ decision_status: nextStatus })
-            .eq('id', booking.id)
+  const fetchBookings = async () => {
+    setLoading(true)
+    try {
+      const { data } = await supabase.from('bookings').select('*').order('date', { ascending: true })
 
-          if (updateError) {
-            console.error('Error updating automatic decision:', updateError)
-            return booking
-          }
-          return { ...booking, decision_status: nextStatus }
-        }))
-        const classifiedById = new Map(automaticallyClassified.map((booking) => [booking.id, booking]))
-        setBookings(loaded.map((booking) => classifiedById.get(booking.id) || booking))
+      const grouped: Record<string, Booking[]> = {
+        '대기': [],
+        '확정-자동': [],
+        '확정-수동': [],
+        '검토': [],
+        '기각': [],
+        '질문': [],
       }
+
+      data?.forEach((b: any) => {
+        const decision = b.decision || 'pending'
+        const statusKey = mapDecisionToStatus(decision)
+        grouped[statusKey].push(b)
+      })
+
+      setBookings(grouped)
+    } catch (err) {
+      console.error('Error fetching bookings:', err)
+    } finally {
       setLoading(false)
     }
+  }
 
-    fetchBookings()
-  }, [refreshKey, rerunKey])
-
-  const groupedBookings = useMemo(() => {
-    const groups: Record<BoardStatus, Booking[]> = {
-      waiting: [],
-      auto: [],
-      human: [],
-      blocked: [],
-      question: [],
+  const mapDecisionToStatus = (decision: string): string => {
+    switch (decision) {
+      case 'pending':
+        return '대기'
+      case 'confirmed_auto':
+        return '확정-자동'
+      case 'confirmed_human':
+        return '확정-수동'
+      case 'review':
+        return '검토'
+      case 'rejected':
+        return '기각'
+      case 'asking':
+        return '질문'
+      default:
+        return '대기'
     }
+  }
 
-    bookings.forEach((booking) => {
-      groups[booking.decision_status].push(booking)
-    })
+  const getCardColor = (status: string): string => {
+    switch (status) {
+      case '대기':
+        return 'bg-gray-50 border-gray-200'
+      case '확정-자동':
+        return 'bg-green-50 border-green-200'
+      case '확정-수동':
+        return 'bg-green-100 border-green-400'
+      case '검토':
+        return 'bg-yellow-50 border-yellow-200'
+      case '기각':
+        return 'bg-red-50 border-red-200'
+      case '질문':
+        return 'bg-blue-50 border-blue-200'
+      default:
+        return 'bg-gray-50 border-gray-200'
+    }
+  }
 
-    return groups
-  }, [bookings])
+  const statuses = ['대기', '확정-자동', '확정-수동', '검토', '기각', '질문'] as const
 
   if (loading) {
-    return <div className="h-96 rounded-xl bg-white p-8 text-center text-slate-500 shadow-sm">로딩 중...</div>
+    return (
+      <div className="text-center py-8">
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    )
   }
 
   return (
-    <section className="rounded-xl bg-white p-5 shadow-sm md:p-7">
-      <div className="mb-5 flex items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800">상태 보드</h2>
-          <p className="mt-1 text-sm text-slate-500">예약의 현재 처리 상태를 한눈에 확인합니다.</p>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {statuses.map((status) => (
+        <div key={status} className={`border rounded-lg p-4 ${getCardColor(status)}`}>
+          <h3 className="font-semibold text-gray-800 mb-3">{status}</h3>
+          <div className="space-y-3">
+            {bookings[status].length === 0 ? (
+              <p className="text-sm text-gray-500">예약 없음</p>
+            ) : (
+              bookings[status].map((booking) => (
+                <div key={booking.id} className="bg-white rounded p-3 border border-gray-200 text-sm">
+                  <div className="font-semibold text-gray-800">{booking.customer}</div>
+                  <div className="text-gray-600">{booking.date}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {booking.kind} · {booking.form}
+                  </div>
+                  {booking.memo && <div className="text-xs text-gray-600 mt-1">{booking.memo}</div>}
+                  {booking.slot_assigned && (
+                    <div className="text-xs text-green-700 font-medium mt-1">확정: {booking.slot_assigned}</div>
+                  )}
+                  {status === '검토' && booking.options && (
+                    <div className="text-xs text-yellow-700 font-medium mt-1">대상: {booking.options}</div>
+                  )}
+                  {booking.reason && (
+                    <div className="text-xs text-gray-600 mt-1 line-clamp-1">{booking.reason}</div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
-        <button
-          type="button"
-          className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
-          onClick={() => setRerunKey((value) => value + 1)}
-        >
-          전부 자동 판정
-        </button>
-      </div>
-
-      <div className="grid min-h-[28rem] grid-cols-1 gap-3 md:grid-cols-5">
-        {columns.map((column) => {
-          const items = groupedBookings[column.key]
-          return (
-            <div key={column.key} className={`rounded-xl border p-3 ${column.className}`}>
-              <div className="mb-3 inline-flex rounded-md bg-white/80 px-2.5 py-1 text-sm font-bold text-slate-700 shadow-sm">
-                {column.label} ({items.length})
-              </div>
-              <div className="space-y-2">
-                {items.map((booking) => (
-                  <article key={booking.id} className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-                    <h3 className="truncate font-semibold text-slate-800">{booking.customer}</h3>
-                    <p className="mt-1 text-xs text-slate-500">{booking.date} {booking.time}</p>
-                    <p className="truncate text-sm text-slate-600">{booking.service}</p>
-                    {booking.address && <p className="truncate text-xs text-slate-500">{booking.address}</p>}
-                  </article>
-                ))}
-              </div>
-            </div>
-          )
-        })}
-      </div>
-    </section>
+      ))}
+    </div>
   )
 }

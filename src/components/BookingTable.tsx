@@ -13,13 +13,15 @@ interface Booking {
   latitude?: number
   longitude?: number
   status: 'pending' | 'confirmed'
+  decision_status: 'waiting' | 'auto' | 'human' | 'blocked' | 'question'
 }
 
 interface BookingTableProps {
   refreshKey?: number
+  showJudgement?: boolean
 }
 
-export default function BookingTable({ refreshKey }: BookingTableProps) {
+export default function BookingTable({ refreshKey, showJudgement = false }: BookingTableProps) {
   const [bookings, setBookings] = useState<Booking[]>([])
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState<string | null>(null)
@@ -62,6 +64,25 @@ export default function BookingTable({ refreshKey }: BookingTableProps) {
       await fetchBookings()
     } catch (error) {
       console.error('Error updating status:', error)
+    } finally {
+      setToggling(null)
+    }
+  }
+
+  async function toggleDecision(id: string, currentDecision: Booking['decision_status']) {
+    const nextDecision = currentDecision === 'human' ? 'auto' : 'human'
+    setToggling(id)
+
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ decision_status: nextDecision })
+        .eq('id', id)
+
+      if (error) throw error
+      await fetchBookings()
+    } catch (error) {
+      console.error('Error updating decision:', error)
     } finally {
       setToggling(null)
     }
@@ -118,6 +139,7 @@ export default function BookingTable({ refreshKey }: BookingTableProps) {
             <th className="border border-gray-300 px-4 py-2 text-left">위도/경도</th>
             <th className="border border-gray-300 px-4 py-2 text-left">날씨</th>
             <th className="border border-gray-300 px-4 py-2 text-center">상태</th>
+            {showJudgement && <th className="border border-gray-300 px-4 py-2 text-center">판정</th>}
           </tr>
         </thead>
         <tbody>
@@ -157,6 +179,17 @@ export default function BookingTable({ refreshKey }: BookingTableProps) {
                   {getStatusLabel(booking.status)}
                 </button>
               </td>
+              {showJudgement && <td className="border border-gray-300 px-4 py-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => toggleDecision(booking.id, booking.decision_status)}
+                  disabled={toggling === booking.id}
+                  className="rounded-md bg-slate-700 px-3 py-1 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
+                >
+                  판정
+                </button>
+                <span className="ml-2 text-sm font-semibold text-slate-700">{booking.decision_status}</span>
+              </td>}
             </tr>
           ))}
         </tbody>

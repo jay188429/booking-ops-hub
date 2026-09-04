@@ -12,6 +12,8 @@ interface BookingData {
   date: string
   time: string
   address: string
+  latitude?: number
+  longitude?: number
 }
 
 interface TokenResponse {
@@ -83,13 +85,26 @@ async function addEventToCalendar(
     throw new Error("Calendar ID not configured")
   }
 
-  // Parse date and time to create ISO datetime
-  const [year, month, day] = bookingData.date.split("-").map(Number)
-  const [hours, minutes] = bookingData.time.split(":").map(Number)
-
-  const startDateTime = new Date(year, month - 1, day, hours, minutes)
-  const endDateTime = new Date(startDateTime)
-  endDateTime.setHours(endDateTime.getHours() + 1) // Default 1 hour duration
+  // Keep the form's Seoul wall-clock value as an RFC3339 value with an
+  // explicit KST offset. Do not convert the start value through UTC.
+  const startDateTime = `${bookingData.date}T${bookingData.time}:00+09:00`
+  const endDate = new Date(startDateTime)
+  endDate.setTime(endDate.getTime() + 60 * 60 * 1000)
+  const endParts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(endDate)
+  const endValues = Object.fromEntries(endParts.map(({ type, value }) => [type, value]))
+  const endDateTime = `${endValues.year}-${endValues.month}-${endValues.day}T${endValues.hour}:${endValues.minute}:${endValues.second}+09:00`
+  const mapLink = bookingData.latitude !== undefined && bookingData.longitude !== undefined
+    ? `https://www.google.com/maps/search/?api=1&query=${bookingData.latitude},${bookingData.longitude}`
+    : undefined
 
   const eventBody = {
     summary: `${bookingData.customer} - ${bookingData.service}`,
@@ -97,14 +112,15 @@ async function addEventToCalendar(
 고객사: ${bookingData.customer}
 서비스: ${bookingData.service}
 주소: ${bookingData.address || "미입력"}
+${mapLink ? `지도: ${mapLink}` : ""}
 `.trim(),
     location: bookingData.address || undefined,
     start: {
-      dateTime: startDateTime.toISOString(),
+      dateTime: startDateTime,
       timeZone: "Asia/Seoul",
     },
     end: {
-      dateTime: endDateTime.toISOString(),
+      dateTime: endDateTime,
       timeZone: "Asia/Seoul",
     },
     reminders: {

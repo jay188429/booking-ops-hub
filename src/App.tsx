@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react'
 import BookingForm from './components/BookingForm'
 import BookingTable from './components/BookingTable'
 import StatCards from './components/StatCards'
+import StatusBoard from './components/StatusBoard'
 import LoginPage from './components/LoginPage'
+import UndecidedManagement from './components/UndecidedManagement'
 import { onAuthStateChange, signOut } from './lib/supabase'
 
-type TabType = '대시보드' | '예약목록' | '예약추가' | '상태관리' | '위치확인'
+type TabType = '대시보드' | '예약목록' | '예약추가' | '미확정관리' | '위치확인'
 
-const TABS: TabType[] = ['대시보드', '예약목록', '예약추가', '상태관리', '위치확인']
+const TABS: TabType[] = ['대시보드', '예약목록', '예약추가', '미확정관리', '위치확인']
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('대시보드')
@@ -74,13 +76,14 @@ export default function App() {
         return (
           <div className="pb-20">
             <StatCards refreshKey={refreshKey} />
+            <StatusBoard refreshKey={refreshKey} />
           </div>
         )
       case '예약목록':
         return (
           <div className="pb-20">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">예약 목록</h2>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">예약 목록</h2>
               <BookingTable refreshKey={refreshKey} />
             </div>
           </div>
@@ -91,14 +94,10 @@ export default function App() {
             <BookingForm onSuccess={handleFormSuccess} />
           </div>
         )
-      case '상태관리':
+      case '미확정관리':
         return (
           <div className="pb-20">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">상태 관리</h2>
-              <p className="text-gray-600 mb-4">아래에서 각 예약의 상태를 변경할 수 있습니다. 상태 버튼을 클릭하여 대기중/확정 상태를 토글할 수 있습니다.</p>
-              <BookingTable refreshKey={refreshKey} />
-            </div>
+            <UndecidedManagement refreshKey={refreshKey} />
           </div>
         )
       case '위치확인':

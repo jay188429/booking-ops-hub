@@ -38,6 +38,7 @@ export default function BookingTable({ refreshKey, showJudgement = false }: Book
       const { data, error } = await supabase
         .from('bookings')
         .select('*')
+        .not('decision', 'in', '("confirmed_auto","confirmed_human")')
         .order('date', { ascending: false })
 
       if (error) throw error
@@ -110,7 +111,7 @@ export default function BookingTable({ refreshKey, showJudgement = false }: Book
     return (
       <button
         onClick={() => handleAddressClick(address)}
-        className="text-blue-600 underline hover:text-blue-800 transition-colors"
+        className="text-orange-400 underline hover:text-orange-300 transition-colors"
       >
         {address}
       </button>
@@ -118,57 +119,57 @@ export default function BookingTable({ refreshKey, showJudgement = false }: Book
   }
 
   if (loading) {
-    return <div className="p-4 text-center text-gray-500">로딩 중...</div>
+    return <div className="p-4 text-center text-slate-400">로딩 중...</div>
   }
 
   if (bookings.length === 0) {
-    return <div className="p-4 text-center text-gray-500">예약이 없습니다</div>
+    return <div className="p-4 text-center text-slate-400">예약이 없습니다</div>
   }
 
   return (
     <>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse border border-gray-300">
-        <thead className="bg-gray-100">
+      <div className="overflow-x-auto rounded-lg border border-slate-700">
+        <table className="w-full border-collapse">
+        <thead className="bg-slate-700/50 border-b border-slate-600">
           <tr>
-            <th className="border border-gray-300 px-4 py-2 text-left">고객사</th>
-            <th className="border border-gray-300 px-4 py-2 text-left">서비스</th>
-            <th className="border border-gray-300 px-4 py-2 text-left">날짜</th>
-            <th className="border border-gray-300 px-4 py-2 text-left">시간</th>
-            <th className="border border-gray-300 px-4 py-2 text-left">주소</th>
-            <th className="border border-gray-300 px-4 py-2 text-left">위도/경도</th>
-            <th className="border border-gray-300 px-4 py-2 text-left">날씨</th>
-            <th className="border border-gray-300 px-4 py-2 text-center">상태</th>
-            {showJudgement && <th className="border border-gray-300 px-4 py-2 text-center">판정</th>}
+            <th className="px-4 py-2 text-left text-slate-200 font-semibold">고객사</th>
+            <th className="px-4 py-2 text-left text-slate-200 font-semibold">서비스</th>
+            <th className="px-4 py-2 text-left text-slate-200 font-semibold">날짜</th>
+            <th className="px-4 py-2 text-left text-slate-200 font-semibold">시간</th>
+            <th className="px-4 py-2 text-left text-slate-200 font-semibold">주소</th>
+            <th className="px-4 py-2 text-left text-slate-200 font-semibold">위도/경도</th>
+            <th className="px-4 py-2 text-left text-slate-200 font-semibold">날씨</th>
+            <th className="px-4 py-2 text-center text-slate-200 font-semibold">상태</th>
+            {showJudgement && <th className="px-4 py-2 text-center text-slate-200 font-semibold">판정</th>}
           </tr>
         </thead>
         <tbody>
           {bookings.map((booking) => (
-            <tr key={booking.id} className="hover:bg-gray-50">
-              <td className="border border-gray-300 px-4 py-2">{booking.customer}</td>
-              <td className="border border-gray-300 px-4 py-2">{booking.service}</td>
-              <td className="border border-gray-300 px-4 py-2">{booking.date}</td>
-              <td className="border border-gray-300 px-4 py-2">{booking.time}</td>
-              <td className="border border-gray-300 px-4 py-2">
+            <tr key={booking.id} className="border-b border-slate-600 hover:bg-slate-700/30 transition-colors">
+              <td className="px-4 py-2 text-slate-50 font-medium">{booking.customer}</td>
+              <td className="px-4 py-2 text-slate-50 font-medium">{booking.service}</td>
+              <td className="px-4 py-2 text-slate-50 font-medium">{booking.date}</td>
+              <td className="px-4 py-2 text-slate-50 font-medium">{booking.time}</td>
+              <td className="px-4 py-2 text-slate-50">
                 {getAddressElement(booking.address)}
               </td>
-              <td className="border border-gray-300 px-4 py-2 text-sm">
+              <td className="px-4 py-2 text-sm">
                 {booking.latitude && booking.longitude ? (
-                  <span className="text-gray-600">
+                  <span className="text-slate-100 font-medium">
                     {booking.latitude.toFixed(4)}, {booking.longitude.toFixed(4)}
                   </span>
                 ) : (
-                  <span className="text-gray-400">-</span>
+                  <span className="text-slate-400">-</span>
                 )}
               </td>
-              <td className="border border-gray-300 px-4 py-2 text-sm">
+              <td className="px-4 py-2 text-sm">
                 {booking.latitude && booking.longitude ? (
                   <WeatherInfo latitude={booking.latitude} longitude={booking.longitude} />
                 ) : (
-                  <span className="text-gray-400">-</span>
+                  <span className="text-slate-400">-</span>
                 )}
               </td>
-              <td className="border border-gray-300 px-4 py-2 text-center">
+              <td className="px-4 py-2 text-center">
                 <button
                   onClick={() => toggleStatus(booking.id, booking.status)}
                   disabled={toggling === booking.id}
@@ -179,16 +180,16 @@ export default function BookingTable({ refreshKey, showJudgement = false }: Book
                   {getStatusLabel(booking.status)}
                 </button>
               </td>
-              {showJudgement && <td className="border border-gray-300 px-4 py-2 text-center">
+              {showJudgement && <td className="px-4 py-2 text-center">
                 <button
                   type="button"
                   onClick={() => toggleDecision(booking.id, booking.decision_status)}
                   disabled={toggling === booking.id}
-                  className="rounded-md bg-slate-700 px-3 py-1 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
+                  className="rounded-md bg-orange-600 px-3 py-1 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:opacity-50"
                 >
                   판정
                 </button>
-                <span className="ml-2 text-sm font-semibold text-slate-700">{booking.decision_status}</span>
+                <span className="ml-2 text-sm font-semibold text-slate-300">{booking.decision_status}</span>
               </td>}
             </tr>
           ))}

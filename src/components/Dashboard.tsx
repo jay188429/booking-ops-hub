@@ -69,10 +69,11 @@ export default function Dashboard() {
   const handleJudgeAll = async () => {
     setJudging(true)
     try {
-      const { data: bookings } = await supabase
+      const { data: bookings, error: bookingsError } = await supabase
         .from('bookings')
         .select('*')
         .order('created_at', { ascending: true })
+      if (bookingsError) throw bookingsError
 
       const pendingBookings = (bookings || []).filter((booking: any) => !booking.decision || booking.decision === 'pending')
       if (pendingBookings.length === 0) {
@@ -81,7 +82,8 @@ export default function Dashboard() {
         return
       }
 
-      const { data: allBookings } = await supabase.from('bookings').select('*')
+      const { data: allBookings, error: allBookingsError } = await supabase.from('bookings').select('*')
+      if (allBookingsError) throw allBookingsError
 
       const workingBookings = [...(allBookings || [])]
       for (const booking of pendingBookings) {
@@ -103,7 +105,6 @@ export default function Dashboard() {
             reason: result.reason,
             options: result.options,
             slot_assigned: result.slotAssigned,
-            candidate: result.candidate,
             trace: result.trace.join('\n'),
           })
           .eq('id', booking.id)

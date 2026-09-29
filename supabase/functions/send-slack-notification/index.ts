@@ -51,11 +51,16 @@ serve(async (req) => {
       })
     }
 
-    await fetch(webhookUrl, {
+    const webhookResponse = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(message),
     })
+
+    if (!webhookResponse.ok) {
+      const responseText = await webhookResponse.text()
+      throw new Error(`Slack webhook failed (${webhookResponse.status}): ${responseText || "empty response"}`)
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

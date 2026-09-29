@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { notifyConfirmedCalendar } from '../lib/calendar'
 
 interface UndecidedManagementProps {
   refreshKey: number
@@ -88,6 +89,11 @@ export default function UndecidedManagement({ refreshKey }: UndecidedManagementP
         .eq('id', booking.id)
 
       if (updateError) throw updateError
+      await notifyConfirmedCalendar({
+        ...booking,
+        decision: 'confirmed_human',
+        slot_assigned: booking.candidate,
+      })
       fetchBookings()
     } catch (err) {
       const message = err instanceof Error ? err.message : '업데이트 실패'
@@ -111,6 +117,12 @@ export default function UndecidedManagement({ refreshKey }: UndecidedManagementP
           slot_assigned: selectedBooking.candidate,
         })
         .eq('id', selectedBooking.id)
+
+      await notifyConfirmedCalendar({
+        ...selectedBooking,
+        decision: 'confirmed_human',
+        slot_assigned: selectedBooking.candidate,
+      })
 
       // 다른 쪽은 pending으로 되돌림
       await supabase
@@ -178,39 +190,39 @@ export default function UndecidedManagement({ refreshKey }: UndecidedManagementP
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">미확정 관리</h2>
+    <div className="bg-slate-800/50 rounded-xl shadow-lg p-6 border border-slate-700 backdrop-blur-sm">
+      <h2 className="text-2xl font-bold text-slate-100 mb-4">미확정 관리</h2>
 
-      {error && <div className="mb-4 p-3 bg-red-100 text-red-800 rounded">{error}</div>}
+      {error && <div className="mb-4 p-3 bg-red-900/30 text-red-300 rounded border border-red-700">{error}</div>}
 
       {bookings.length === 0 ? (
-        <p className="text-gray-600">미확정 예약이 없습니다.</p>
+        <p className="text-slate-400">미확정 예약이 없습니다.</p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto rounded-lg border border-slate-700">
           <table className="w-full border-collapse">
             <thead>
-              <tr className="bg-gray-100 border-b">
-                <th className="px-4 py-2 text-left text-sm font-semibold">고객사</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">날짜</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">상태</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">사유</th>
-                <th className="px-4 py-2 text-left text-sm font-semibold">액션</th>
+              <tr className="bg-slate-700/50 border-b border-slate-600">
+                <th className="px-4 py-2 text-left text-sm font-semibold text-slate-200">고객사</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-slate-200">날짜</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-slate-200">상태</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-slate-200">사유</th>
+                <th className="px-4 py-2 text-left text-sm font-semibold text-slate-200">액션</th>
               </tr>
             </thead>
             <tbody>
               {bookings.map((booking) => (
-                <tr key={booking.id} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm">{booking.customer}</td>
-                  <td className="px-4 py-3 text-sm">{booking.date}</td>
+                <tr key={booking.id} className="border-b border-slate-600 hover:bg-slate-700/30 transition-colors">
+                  <td className="px-4 py-3 text-sm text-slate-200">{booking.customer}</td>
+                  <td className="px-4 py-3 text-sm text-slate-200">{booking.date}</td>
                   <td className="px-4 py-3">
                     <span className={`inline-block px-3 py-1 rounded font-semibold text-xs ${getBadgeColor(booking.decision)}`}>
                       {getDecisionLabel(booking.decision)}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    <div>{booking.reason}</div>
+                    <div className="text-slate-300">{booking.reason}</div>
                     {booking.decision === 'review' && booking.options && (
-                      <div className="mt-1 text-xs text-gray-500">
+                      <div className="mt-1 text-xs text-slate-400">
                         대상: {booking.options}
                       </div>
                     )}
@@ -248,7 +260,7 @@ export default function UndecidedManagement({ refreshKey }: UndecidedManagementP
 
                     <button
                       onClick={() => toggleExpanded(booking.id)}
-                      className="block w-full px-3 py-1 bg-gray-600 text-white rounded text-xs hover:bg-gray-700 transition-colors"
+                      className="block w-full px-3 py-1 bg-slate-600 text-white rounded text-xs hover:bg-slate-700 transition-colors"
                     >
                       {expandedRows.has(booking.id) ? '과정 숨기기' : '과정 보기'}
                     </button>
@@ -263,9 +275,9 @@ export default function UndecidedManagement({ refreshKey }: UndecidedManagementP
       {/* 확장된 행의 trace 표시 */}
       {bookings.map((booking) => (
         expandedRows.has(booking.id) && booking.trace && (
-          <div key={`trace-${booking.id}`} className="mt-6 p-4 bg-gray-50 rounded border border-gray-200">
-            <h3 className="font-semibold text-gray-700 mb-3">{booking.customer} - 판정 과정</h3>
-            <ol className="list-decimal list-inside space-y-2 text-sm text-gray-700">
+          <div key={`trace-${booking.id}`} className="mt-6 p-4 bg-slate-700/50 rounded border border-slate-600">
+            <h3 className="font-semibold text-slate-200 mb-3">{booking.customer} - 판정 과정</h3>
+            <ol className="list-decimal list-inside space-y-2 text-sm text-slate-300">
               {booking.trace.split('\n').map((line, idx) => (
                 <li key={idx}>{line}</li>
               ))}

@@ -1,5 +1,7 @@
 alter table bookings
   add column if not exists kind text,
+  add column if not exists form text,
+  add column if not exists memo text,
   add column if not exists slots_wanted text,
   add column if not exists decision text not null default 'pending',
   add column if not exists reason text,

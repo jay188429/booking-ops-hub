@@ -94,25 +94,24 @@ export default function JudgmentLog({ realtimeEvent }: { realtimeEvent?: any }) 
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4">판정 로그</h3>
-      <div className="space-y-3 max-h-96 overflow-y-auto">
+    <div>
+      <div className="space-y-3">
         {logs.length === 0 ? (
-          <p className="text-gray-500 text-sm">판정된 예약이 없습니다.</p>
+          <p className="text-slate-400 text-sm">판정된 예약이 없습니다.</p>
         ) : (
           logs.map((log) => (
-            <div key={log.id} className="border-l-4 border-gray-300 pl-4 py-2">
+            <div key={log.id} className="border-l-4 border-orange-500 pl-4 py-2">
               <div className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-600">{formatTime(log.timestamp)}</span>
-                <span className="font-semibold text-gray-800">{log.customer}</span>
+                <span className="text-sm font-medium text-slate-300">{formatTime(log.timestamp)}</span>
+                <span className="font-semibold text-slate-100">{log.customer}</span>
                 <span className={`px-2 py-1 rounded text-xs font-semibold ${getBadgeColor(log.decision)}`}>
                   {getDecisionLabel(log.decision)}
                 </span>
               </div>
               {log.trace.length > 0 && (
-                <div className="mt-2 text-xs text-gray-600 space-y-1">
+                <div className="mt-2 text-xs space-y-1">
                   {log.trace.slice(-3).map((line, idx) => (
-                    <div key={idx} className="text-gray-500">
+                    <div key={idx} className="text-slate-300">
                       {line}
                     </div>
                   ))}

@@ -87,24 +87,6 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
       }
   }
 
-  const addToGoogleCalendar = async (bookingData: {
-    customer: string
-    service: string
-    date: string
-    time: string
-    address: string
-  }) => {
-    try {
-      const { error } = await supabase.functions.invoke('add-to-google-calendar', {
-        body: bookingData,
-      })
-
-      if (error) throw error
-    } catch (err) {
-      console.error('Google Calendar integration failed:', err)
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(null)
@@ -131,6 +113,8 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
             customer: formData.customer,
             service: formData.memo || `${formData.kind} ${formData.form} 예약`,
             kind: formData.kind,
+            form: formData.form,
+            memo: formData.memo,
             address: formData.address || '',
             date: formData.date,
             slots_wanted: slotsWantedStr,
@@ -146,14 +130,6 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
 
       // Send Slack notification
       await sendSlackNotification({
-        customer: formData.customer,
-        service: calendarService,
-        date: formData.date,
-        time: calendarTime,
-        address: formData.address,
-      })
-
-      await addToGoogleCalendar({
         customer: formData.customer,
         service: calendarService,
         date: formData.date,
@@ -189,10 +165,10 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="mb-6 p-4 bg-white rounded-lg shadow-md"
+      className="mb-6 p-6 bg-slate-800/50 rounded-xl shadow-lg border border-slate-700 backdrop-blur-sm"
     >
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">새 예약 추가</h2>
+        <h2 className="text-lg font-bold text-slate-100">새 예약 추가</h2>
         <span className={`px-3 py-1 rounded-full text-xs font-semibold text-white ${
           judgeResult.badge === 'blue' ? 'bg-blue-500' : 'bg-green-500'
         }`}>
@@ -201,12 +177,12 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
       </div>
 
       {judgeResult.message && (
-        <div className="mb-4 p-3 bg-blue-100 text-blue-800 rounded">
+        <div className="mb-4 p-3 bg-blue-900/30 text-blue-300 rounded border border-blue-700">
           {judgeResult.message}
         </div>
       )}
 
-      {error && <div className="mb-4 p-3 bg-red-100 text-red-800 rounded">{error}</div>}
+      {error && <div className="mb-4 p-3 bg-red-900/30 text-red-300 rounded border border-red-700">{error}</div>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* 고객사 */}
@@ -216,7 +192,7 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
           placeholder="고객사"
           value={formData.customer}
           onChange={handleInputChange}
-          className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+          className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-100 placeholder-slate-400 focus:outline-none focus:border-orange-500"
         />
 
         {/* 종류 */}
@@ -224,7 +200,7 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
           name="kind"
           value={formData.kind}
           onChange={handleInputChange}
-          className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+          className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-100 focus:outline-none focus:border-orange-500"
         >
           <option value="">종류 선택</option>
           {KIND_OPTIONS.map(k => (
@@ -237,7 +213,7 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
           name="form"
           value={formData.form}
           onChange={handleInputChange}
-          className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+          className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-100 focus:outline-none focus:border-orange-500"
         >
           <option value="">형태 선택</option>
           {FORM_OPTIONS.map(f => (
@@ -252,7 +228,7 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
           placeholder="메모 (예: 미팅, 기획 회의)"
           value={formData.memo}
           onChange={handleInputChange}
-          className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+          className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-100 placeholder-slate-400 focus:outline-none focus:border-orange-500"
         />
 
         {/* 위치 */}
@@ -262,10 +238,10 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
           placeholder={formData.form === '외근' ? '위치 (필수)' : '위치 (선택)'}
           value={formData.address}
           onChange={handleInputChange}
-          className={`px-3 py-2 border rounded focus:outline-none ${
+          className={`px-3 py-2 bg-slate-700 border rounded text-slate-100 placeholder-slate-400 focus:outline-none ${
             formData.form === '외근' && !formData.address
-              ? 'border-red-300 focus:border-red-500'
-              : 'border-gray-300 focus:border-blue-500'
+              ? 'border-red-500 focus:border-red-400'
+              : 'border-slate-600 focus:border-orange-500'
           }`}
         />
 
@@ -275,13 +251,13 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
           name="date"
           value={formData.date}
           onChange={handleInputChange}
-          className="px-3 py-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+          className="px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-100 focus:outline-none focus:border-orange-500"
         />
       </div>
 
       {/* 희망 슬롯 */}
-      <div className="mt-4 p-3 bg-gray-50 rounded">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+      <div className="mt-4 p-3 bg-slate-700/50 rounded border border-slate-600">
+        <label className="block text-sm font-medium text-slate-300 mb-2">
           희망 슬롯 (체크 순서가 우선순위)
         </label>
         <div className="space-y-2">
@@ -292,13 +268,13 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
                 id={slot.id}
                 checked={formData.slotsWanted.includes(slot.id)}
                 onChange={() => handleSlotChange(slot.id)}
-                className="w-4 h-4 text-blue-600 rounded"
+                className="w-4 h-4 text-orange-500 rounded"
               />
-              <label htmlFor={slot.id} className="ml-2 text-sm text-gray-700">
+              <label htmlFor={slot.id} className="ml-2 text-sm text-slate-300">
                 {slot.label}
               </label>
               {formData.slotsWanted.includes(slot.id) && slotOrder[slot.id] && (
-                <span className="ml-2 px-2 py-1 bg-blue-200 text-blue-800 rounded text-xs font-semibold">
+                <span className="ml-2 px-2 py-1 bg-orange-500/30 text-orange-200 rounded text-xs font-semibold border border-orange-500/50">
                   {slotOrder[slot.id]}
                 </span>
               )}
@@ -310,10 +286,10 @@ export default function BookingForm({ onSuccess }: BookingFormProps) {
       <button
         type="submit"
         disabled={loading || !judgeResult.isValid}
-        className={`mt-4 px-6 py-2 rounded text-white font-medium transition-colors ${
+        className={`mt-4 px-6 py-2 rounded font-medium transition-all ${
           judgeResult.isValid
-            ? 'bg-green-600 hover:bg-green-700'
-            : 'bg-gray-400 cursor-not-allowed'
+            ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white hover:from-orange-600 hover:to-red-600'
+            : 'bg-slate-600 text-slate-400 cursor-not-allowed'
         }`}
       >
         {loading ? '추가 중...' : '예약하기'}

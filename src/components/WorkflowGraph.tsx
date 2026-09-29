@@ -91,21 +91,21 @@ export default function WorkflowGraph({ refreshKey, lastDecision }: WorkflowGrap
   const getNodeColor = (node: string): string => {
     switch (node) {
       case '대기':
-        return '#475569'
+        return '#64748b'
       case '확정-자동':
-        return '#22c55e'
+        return '#10b981'
       case '확정-수동':
-        return '#84cc16'
+        return '#06b6d4'
       case '검토':
-        return '#eab308'
+        return '#f59e0b'
       case '기각':
         return '#ef4444'
       case '질문':
-        return '#3b82f6'
+        return '#6366f1'
       case '판정':
         return '#1e293b'
       default:
-        return '#334155'
+        return '#475569'
     }
   }
 
@@ -114,14 +114,14 @@ export default function WorkflowGraph({ refreshKey, lastDecision }: WorkflowGrap
   }
 
   const nodePositions: Record<string, [number, number]> = {
-    접수: [100, 150],
-    대기: [250, 150],
-    판정: [400, 150],
-    '확정-자동': [600, 50],
-    '확정-수동': [600, 150],
-    검토: [600, 250],
-    기각: [600, 350],
-    질문: [600, 450],
+    접수: [80, 150],
+    대기: [220, 150],
+    판정: [360, 150],
+    '확정-자동': [540, 50],
+    '확정-수동': [540, 150],
+    검토: [540, 250],
+    기각: [540, 350],
+    질문: [540, 450],
   }
 
   const edges = [
@@ -138,24 +138,31 @@ export default function WorkflowGraph({ refreshKey, lastDecision }: WorkflowGrap
   ]
 
   return (
-    <div className="w-full">
-      <svg width="100%" height="550" viewBox="0 0 700 550" className="drop-shadow-lg">
+    <div className="w-full flex justify-center">
+      <svg width="100%" height="550" viewBox="0 0 640 550" className="drop-shadow-2xl" style={{ maxWidth: '900px' }}>
         {/* 화살표 정의 */}
         <defs>
           <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-            <polygon points="0 0, 10 3, 0 6" fill="#94a3b8" />
+            <polygon points="0 0, 10 3, 0 6" fill="#cbd5e1" />
           </marker>
           <marker id="arrowhead-highlight" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
             <polygon points="0 0, 10 3, 0 6" fill="#fbbf24" />
           </marker>
           <filter id="glow">
-            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
             <feMerge>
               <feMergeNode in="coloredBlur"/>
               <feMergeNode in="SourceGraphic"/>
             </feMerge>
           </filter>
+          <linearGradient id="gradientBg" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#0f172a" stopOpacity="0.1" />
+            <stop offset="100%" stopColor="#0f172a" stopOpacity="0.05" />
+          </linearGradient>
         </defs>
+
+        {/* 배경 */}
+        <rect width="640" height="550" fill="url(#gradientBg)" rx="12" />
 
         {/* 화살표 그리기 */}
         {edges.map(([from, to], idx) => {
@@ -166,15 +173,16 @@ export default function WorkflowGraph({ refreshKey, lastDecision }: WorkflowGrap
           return (
             <line
               key={`edge-${idx}`}
-              x1={x1 + 40}
+              x1={x1 + 30}
               y1={y1}
-              x2={x2 - 40}
+              x2={x2 - 30}
               y2={y2}
               stroke={isHighlighted ? '#fbbf24' : '#475569'}
-              strokeWidth={isHighlighted ? 4 : 2}
+              strokeWidth={isHighlighted ? 5 : 2.5}
               markerEnd={isHighlighted ? 'url(#arrowhead-highlight)' : 'url(#arrowhead)'}
               filter={isHighlighted ? 'url(#glow)' : ''}
-              opacity={isHighlighted ? 1 : 0.6}
+              opacity={isHighlighted ? 1 : 0.5}
+              strokeLinecap="round"
             />
           )
         })}
@@ -183,38 +191,72 @@ export default function WorkflowGraph({ refreshKey, lastDecision }: WorkflowGrap
         {Object.entries(nodePositions).map(([node, [x, y]]) => {
           const count = counts[node as keyof NodeCounts] || 0
           const color = getNodeColor(node)
-          const strokeColor = node === '판정' ? '#64748b' : 'none'
+          const isSpecial = node === '판정'
 
           return (
             <g key={`node-${node}`}>
+              {/* 노드 배경 (그림자) */}
+              <circle
+                cx={x + 20}
+                cy={y + 2}
+                r={31}
+                fill="#000000"
+                opacity="0.15"
+              />
+
+              {/* 노드 메인 원 */}
               <circle
                 cx={x + 20}
                 cy={y}
-                r={35}
+                r={30}
                 fill={color}
-                stroke={strokeColor}
-                strokeWidth={node === '판정' ? 3 : 0}
-                opacity={0.9}
+                opacity="0.95"
+                style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))' }}
               />
+
+              {/* 노드 테두리 */}
+              {isSpecial && (
+                <circle
+                  cx={x + 20}
+                  cy={y}
+                  r={30}
+                  fill="none"
+                  stroke="#94a3b8"
+                  strokeWidth="2.5"
+                  opacity="0.4"
+                />
+              )}
+
+              {/* 노드 텍스트 */}
               <text
                 x={x + 20}
-                y={y + 3}
+                y={y + 1}
                 textAnchor="middle"
-                fontSize="11"
-                fontWeight="bold"
-                fill="#f1f5f9"
-                letterSpacing="0.5"
+                fontSize="12"
+                fontWeight="700"
+                fill="#ffffff"
+                letterSpacing="0.3"
+                style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}
               >
                 {node}
               </text>
-              <circle cx={x + 20} cy={y + 22} r={11} fill="#fb923c" opacity={0.9} />
+
+              {/* 카운트 배지 */}
+              <circle
+                cx={x + 20}
+                cy={y + 24}
+                r={13}
+                fill="#fb923c"
+                opacity="0.95"
+                style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.25))' }}
+              />
               <text
                 x={x + 20}
-                y={y + 26}
+                y={y + 28}
                 textAnchor="middle"
-                fontSize="12"
-                fontWeight="bold"
-                fill="#1e293b"
+                fontSize="13"
+                fontWeight="800"
+                fill="#0f172a"
               >
                 {count}
               </text>
